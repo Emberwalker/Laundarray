@@ -12,7 +12,7 @@ buildscript {
         forge_ver = '10.13.3.1401-1710ls'
         mod_version = '0.1.0'
         kotlin_ver = '0.11.91.1'
-        ee3_ver = "${mc_ver}-0.3.501"
+        ee3_ver = "${mc_ver}-0.3.505"
         // =======================================
     }
     repositories {

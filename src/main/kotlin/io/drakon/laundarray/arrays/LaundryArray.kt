@@ -1,6 +1,6 @@
 package io.drakon.laundarray.arrays
 
-import com.pahimar.ee3.api.AlchemyArray
+import com.pahimar.ee3.api.array.AlchemyArray
 import cpw.mods.fml.common.network.NetworkRegistry
 import io.drakon.laundarray.Laundarray
 import io.drakon.laundarray.lib.Reference

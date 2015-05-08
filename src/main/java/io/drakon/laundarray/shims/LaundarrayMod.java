@@ -15,7 +15,7 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
  *
  * @author Arkan <arkan@drakon.io>
  */
-@Mod(modid = "Laundarray", name = "Laundarray", version = "@VERSION@", dependencies = "required-after:EE3|API@[1.1,)")
+@Mod(modid = "Laundarray", name = "Laundarray", version = "@VERSION@", dependencies = "required-after:EE3|API@[1.2,)")
 public class LaundarrayMod {
 
     @SidedProxy(serverSide = "io.drakon.laundarray.proxy.CommonProxy", clientSide = "io.drakon.laundarray.proxy.ClientProxy")
