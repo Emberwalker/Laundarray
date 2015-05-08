@@ -3,6 +3,7 @@ package io.drakon.laundarray.arrays
 import com.pahimar.ee3.api.array.AlchemyArray
 import com.pahimar.ee3.api.array.AlchemyArrayRegistryProxy
 import io.drakon.laundarray.Laundarray
+import io.drakon.laundarray.lib.Config
 
 /**
  * Array initialiser.
@@ -12,11 +13,11 @@ import io.drakon.laundarray.Laundarray
 public object ArrayInit {
 
     public val laundryArray:AlchemyArray = LaundryArray()
+    public val randomTeleArray:AlchemyArray = RandomTeleArray()
 
     public fun init() {
-        if (!AlchemyArrayRegistryProxy.registerAlchemyArray(laundryArray)) {
-            Laundarray.log.error("Failed to registry array?!")
-        }
+        if (Config.Arrays.Laundry.enabled) AlchemyArrayRegistryProxy.registerAlchemyArray(laundryArray)
+        if (Config.Arrays.RandomTeleport.enabled) AlchemyArrayRegistryProxy.registerAlchemyArray(randomTeleArray)
     }
 
 }

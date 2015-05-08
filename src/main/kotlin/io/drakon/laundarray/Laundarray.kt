@@ -1,16 +1,17 @@
 package io.drakon.laundarray
 
 import io.drakon.laundarray.shims.LaundarrayMod
+import io.drakon.laundarray.arrays.ArrayInit
+import io.drakon.laundarray.lib.Config
+import io.drakon.laundarray.lib.Reference
+import io.drakon.laundarray.net.PacketHandler
+import io.drakon.laundarray.proxy.CommonProxy
 
 import cpw.mods.fml.common.event.FMLInitializationEvent
 import cpw.mods.fml.common.event.FMLPostInitializationEvent
 import cpw.mods.fml.common.event.FMLPreInitializationEvent
 import cpw.mods.fml.common.network.NetworkRegistry
 import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper
-import io.drakon.laundarray.arrays.ArrayInit
-import io.drakon.laundarray.lib.Reference
-import io.drakon.laundarray.net.PacketHandler
-import io.drakon.laundarray.proxy.CommonProxy
 
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
@@ -31,6 +32,7 @@ public object Laundarray {
 
     public fun preinit(evt:FMLPreInitializationEvent) {
         log.info("Preparing to do the laundry.")
+        Config.loadConfig(evt.getSuggestedConfigurationFile())
         PacketHandler.init()
     }
 

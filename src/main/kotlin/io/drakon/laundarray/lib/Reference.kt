@@ -11,11 +11,15 @@ public object Reference {
         public val MODID:String = "Laundarray"
     }
     object Names {
-        public val LAUNDRY_ARRAY:String = "arrays.laundry:laundarray"
+        private val PREFIX = "arrays.laundry"
+        public val LAUNDRY_ARRAY:String = "$PREFIX:laundarray"
+        public val RANDOM_TELE_ARRAY:String = "$PREFIX:random_teleport"
     }
 
     object Textures {
-        public val LAUNDRY_ARRAY:ResourceLocation = ResourceLocation(IDs.MODID.toLowerCase(), "textures/arrays/laundarray.png")
+        private val PREFIX = "textures/arrays"
+        public val LAUNDRY_ARRAY:ResourceLocation = ResourceLocation(IDs.MODID.toLowerCase(), "$PREFIX/laundarray.png")
+        public val RANDOM_TELE_ARRAY:ResourceLocation = ResourceLocation(IDs.MODID.toLowerCase(), "$PREFIX/random_tele.png")
     }
 
 }
