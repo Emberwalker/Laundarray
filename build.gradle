@@ -10,7 +10,7 @@ buildscript {
         // ==[ Variables ]========================
         mc_ver = '1.7.10'
         forge_ver = '10.13.3.1401-1710ls'
-        mod_version = '0.2.0'
+        mod_version = '0.3.0'
         kotlin_ver = '0.11.91.1'
         ee3_ver = "${mc_ver}-0.3.505"
         // =======================================

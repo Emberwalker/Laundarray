@@ -18,6 +18,13 @@ public object Config {
             public var enabled: Boolean = true
             public var range: Int = 2000
         }
+        public object Eraser {
+            public var enabled:Boolean = true
+        }
+        public object IslandGen {
+            public var enabled: Boolean = true
+            public var ejectDirt: Boolean = true
+        }
     }
 
     public fun loadConfig(file: File) {
@@ -30,6 +37,13 @@ public object Config {
         // Random Teleport
         Arrays.RandomTeleport.enabled = conf.getBoolean("enable", "randomtele", Arrays.RandomTeleport.enabled, "Enable Random Teleport Array (doesn't remove existing arrays)")
         Arrays.RandomTeleport.range = conf.getInt("range", "randomtele", Arrays.RandomTeleport.range, 500, 5000, "Max radius teleported per use of array")
+
+        // Eraser
+        Arrays.Eraser.enabled = conf.getBoolean("enable", "eraser", Arrays.Eraser.enabled, "Enable Eraser Array (doesn't remove existing arrays)")
+
+        // Island Gen
+        //Arrays.IslandGen.enabled = conf.getBoolean("enable", "islandgen", Arrays.IslandGen.enabled, "Enable Island Gen Array (doesn't remove existing arrays)")
+        //Arrays.IslandGen.ejectDirt = conf.getBoolean("ejectdirt", "islandgen", Arrays.IslandGen.enabled, "Eject EMC-equivalent dirt on array destruction (may produce a lot of entities)")
 
         conf.save()
     }
