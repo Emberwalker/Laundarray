@@ -42,8 +42,8 @@ public object Config {
         Arrays.Eraser.enabled = conf.getBoolean("enable", "eraser", Arrays.Eraser.enabled, "Enable Eraser Array (doesn't remove existing arrays)")
 
         // Island Gen
-        //Arrays.IslandGen.enabled = conf.getBoolean("enable", "islandgen", Arrays.IslandGen.enabled, "Enable Island Gen Array (doesn't remove existing arrays)")
-        //Arrays.IslandGen.ejectDirt = conf.getBoolean("ejectdirt", "islandgen", Arrays.IslandGen.enabled, "Eject EMC-equivalent dirt on array destruction (may produce a lot of entities)")
+        Arrays.IslandGen.enabled = conf.getBoolean("enable", "islandgen", Arrays.IslandGen.enabled, "Enable Island Gen Array (doesn't remove existing arrays)")
+        Arrays.IslandGen.ejectDirt = conf.getBoolean("ejectdirt", "islandgen", Arrays.IslandGen.enabled, "Eject EMC-equivalent dirt on array destruction (may produce a lot of entities)")
 
         conf.save()
     }

@@ -3,7 +3,9 @@ package io.drakon.laundarray.algo
 import io.drakon.laundarray.util.FutureHelper
 
 import org.apache.logging.log4j.LogManager
+import java.util.Collections
 import java.util.HashSet
+import java.util.LinkedList
 
 import java.util.Random
 import java.util.concurrent.Future
@@ -32,7 +34,7 @@ public class IslandGenerator private (var initSeed:Any? = null) {
         /**
          * Generates a Pair<stone,dirt>, where stone and dirt are Sets of BlockCoords.
          */
-        public fun generateIslandData(maxHeight:Int, maxTopRadius:Int, seed:Any? = null): Future<Pair<Set<BlockCoord>, Set<BlockCoord>>> {
+        public fun generateIslandData(maxHeight:Int, maxTopRadius:Int, seed:Any? = null): Future<Pair<MutableList<BlockCoord>, MutableList<BlockCoord>>> {
             return FutureHelper.getFuture({
                 val gen = IslandGenerator(seed)
                 val grid = gen.generate(maxHeight, maxTopRadius)
@@ -46,16 +48,19 @@ public class IslandGenerator private (var initSeed:Any? = null) {
             return IslandGenerator(seed)
         }
 
-        private fun convertGridToPairs(grid:Array<Array<Array<Boolean>>>): Pair<Set<BlockCoord>, Set<BlockCoord>> {
-            val stone = HashSet<BlockCoord>()
-            val dirt = HashSet<BlockCoord>()
+        private fun convertGridToPairs(grid:Array<Array<Array<Boolean>>>): Pair<MutableList<BlockCoord>, MutableList<BlockCoord>> {
+            val stone = LinkedList<BlockCoord>()
+            val dirt = LinkedList<BlockCoord>()
             for (n in 0..grid.lastIndex) {
                 for (p in 0..grid[n].lastIndex) {
                     val col = grid[n][p]
-                    for (x in 0..col.lastIndex-2) if (col[x]) stone.add(BlockCoord(n,p,x))
-                    for (x in col.lastIndex-2..col.lastIndex) if (col[x]) dirt.add(BlockCoord(n,p,x))
+                    for (x in 0..col.lastIndex-2) if (col[x]) stone.add(BlockCoord(n,x,p))
+                    for (x in col.lastIndex-2..col.lastIndex) if (col[x]) dirt.add(BlockCoord(n,x,p))
                 }
             }
+
+            Collections.shuffle(stone)
+            Collections.shuffle(dirt)
 
             return Pair(stone, dirt)
         }
@@ -93,7 +98,7 @@ public class IslandGenerator private (var initSeed:Any? = null) {
         grid[centre][centre][0] = true
 
         // Calculate max splat size
-        val maxSplat:Int = Math.round(maxTopRadius/(maxHeight*2.0)).toInt()
+        val maxSplat:Int = Math.floor(maxTopRadius/(maxHeight*2.0)).toInt()
 
         // Main loop
         for ( z in 1..maxHeight - 1 ) {
@@ -143,22 +148,22 @@ public class IslandGenerator private (var initSeed:Any? = null) {
                 0 -> {
                     // +x
                     delta_x_pos += 1
-                    if (x+delta_x_pos <= grid.lastIndex)
+                    if (x+delta_x_pos < grid.lastIndex)
                         grid[x+delta_x_pos][y][z] = true}
                 1 -> {
                     // +y
                     delta_y_pos += 1
-                    if (y+delta_y_pos <= grid[x].lastIndex)
+                    if (y+delta_y_pos < grid[x].lastIndex)
                         grid[x][y+delta_y_pos][z] = true}
                 2 -> {
                     // -x
                     delta_x_neg += 1
-                    if (x-delta_x_neg >= 0)
+                    if (x-delta_x_neg > 0)
                         grid[x-delta_x_neg][y][z] = true}
                 3 -> {
                     // -y
                     delta_y_neg += 1
-                    if (y-delta_y_neg >= 0)
+                    if (y-delta_y_neg > 0)
                         grid[x][y-delta_y_neg][z] = true}
                 else -> {
                     // Whut

@@ -5,6 +5,8 @@ import io.drakon.laundarray.lib.Reference
 
 import com.pahimar.ee3.api.array.AlchemyArray
 import com.pahimar.ee3.api.exchange.EnergyValueRegistryProxy
+import com.pahimar.ee3.tileentity.TileEntityAlchemyArray
+import io.drakon.laundarray.algo.IslandGenerator
 
 import net.minecraft.entity.Entity
 import net.minecraft.entity.item.EntityItem
@@ -15,8 +17,10 @@ import net.minecraft.nbt.NBTTagCompound
 import net.minecraft.util.ChatComponentText
 import net.minecraft.world.Explosion
 import net.minecraft.world.World
+import java.util.HashMap
 import java.util.HashSet
 import java.util.Random
+import java.util.concurrent.Future
 
 /**
  * Arraysing Terrain with alchemy. Who doesn't like floating islands?
@@ -30,14 +34,24 @@ public class IslandGenArray : AlchemyArray(Reference.Textures.ISLAND_GEN_ARRAY, 
 
     private var requiredEMC = 1024 // TODO: Vary depending on circle size
     private var storedEMC = 0.0
-    private var isRunning = false
+
+    private class IslGenState {
+        public var isRunning:Boolean = false
+        public var genFuture:Future<Pair<MutableList<IslandGenerator.Companion.BlockCoord>, MutableList<IslandGenerator.Companion.BlockCoord>>>? = null
+        public var result:Pair<MutableList<IslandGenerator.Companion.BlockCoord>, MutableList<IslandGenerator.Companion.BlockCoord>>? = null
+        public val rand:Random = Random()
+    }
+
+    private data class ArrayCoord(val x:Int, val y:Int, val z:Int)
+
+    private var states = HashMap<ArrayCoord, IslGenState>()
 
     override fun onEntityCollidedWithArray(world: World, eventX: Int, eventY: Int, eventZ: Int, arrayX: Int, arrayY: Int, arrayZ: Int, entity: Entity?) {
         super.onEntityCollidedWithArray(world, eventX, eventY, eventZ, arrayX, arrayY, arrayZ, entity)
 
         if (world.isRemote) return
         if (entity !is EntityItem) return
-        val istack = entity.getEntityItem()
+        /*val istack = entity.getEntityItem()
         val item = istack.getItem()
         if (item == null || !EnergyValueRegistryProxy.hasEnergyValue(item)) return
 
@@ -58,33 +72,102 @@ public class IslandGenArray : AlchemyArray(Reference.Textures.ISLAND_GEN_ARRAY, 
             storedEMC += take * value
         }
 
-        if (istack.stackSize <= 0) entity.setDead()
+        if (istack.stackSize <= 0) entity.setDead()*/
     }
 
     override fun onArrayActivated(world: World, eventX: Int, eventY: Int, eventZ: Int, arrayX: Int, arrayY: Int, arrayZ: Int, entityPlayer: EntityPlayer, sideHit: Int, hitX: Float, hitY: Float, hitZ: Float) {
         super.onArrayActivated(world, eventX, eventY, eventZ, arrayX, arrayY, arrayZ, entityPlayer, sideHit, hitX, hitY, hitZ)
 
         if (world.isRemote) return
-        if (isRunning) entityPlayer.addChatMessage(ChatComponentText("This array is already running."))
 
-        if (storedEMC < requiredEMC) {
+        var state = states.get(ArrayCoord(arrayX, arrayY, arrayZ))
+        if (state == null) {
+            state = IslGenState()
+            states.put(ArrayCoord(arrayX, arrayY, arrayZ), state)
+        }
+
+        if (state.isRunning) {
+            entityPlayer.addChatMessage(ChatComponentText("This array is already running."))
+            return
+        }
+
+        /*if (storedEMC < requiredEMC) {
             entityPlayer.addChatMessage(ChatComponentText("The array seems to be short on EMC. Maybe I should throw more stuff at it?"))
         } else {
             // TODO: Start island gen
+        }*/
+
+        if (state.genFuture == null) {
+            val tile = world.getTileEntity(arrayX, arrayY, arrayZ)
+            if (tile !is TileEntityAlchemyArray) return
+
+            entityPlayer.addChatMessage(ChatComponentText("The array churns into action..."))
+            val height = tile.getSize() * 15
+            val radius = tile.getSize() * 15
+            state.genFuture = IslandGenerator.generateIslandData(height, radius)
+            state.isRunning = true
         }
     }
 
     override fun onUpdate(world: World, arrayX: Int, arrayY: Int, arrayZ: Int, tickCount: Int) {
-        // TODO: Island building
         super.onUpdate(world, arrayX, arrayY, arrayZ, tickCount)
+
+        if (world.isRemote) return
+
+        val coord = ArrayCoord(arrayX, arrayY, arrayZ)
+        var state = states.get(coord)
+        if (state == null) {
+            state = IslGenState()
+            states.put(ArrayCoord(arrayX, arrayY, arrayZ), state)
+        }
+
+        if (state.isRunning && state.genFuture != null) {
+            if (state.result != null) {
+                // Continue build
+                for (_ in 1..5)
+                    continueBuild(state, world, coord, state.rand.nextInt(5) == 0)
+            } else {
+                if (state.genFuture!!.isDone()) {
+                    state.result = state.genFuture!!.get()
+                    continueBuild(state, world, coord)
+                }
+            }
+        }
+    }
+
+    private fun continueBuild(state: IslGenState, world: World, coord: ArrayCoord, dirt:Boolean = false) {
+        val stones = state.result!!.first
+        val dirts = state.result!!.second
+
+        if (stones.isNotEmpty()) {
+            val coordS = stones.first()
+            stones.remove(coordS)
+
+            if (world.getBlock(coord.x + coordS.x, coord.y + coordS.y + 3, coord.z + coordS.z).isAir(world, coord.x + coordS.x, coord.y + coordS.y + 3, coord.z + coordS.z)) {
+                world.setBlock(coord.x + coordS.x, coord.y + coordS.y + 3, coord.z + coordS.z, Blocks.stone)
+            }
+        }
+
+        if (dirt && dirts.isNotEmpty()) {
+            val coordD = dirts.first()
+            dirts.remove(coordD)
+
+            if (world.getBlock(coord.x + coordD.x, coord.y + coordD.y + 3, coord.z + coordD.z).isAir(world, coord.x + coordD.x, coord.y + coordD.y + 3, coord.z + coordD.z)) {
+                world.setBlock(coord.x + coordD.x, coord.y + coordD.y + 3, coord.z + coordD.z, Blocks.grass)
+            }
+        }
+
+        if (stones.isEmpty() && dirts.isEmpty()) {
+            world.setBlockToAir(coord.x, coord.y, coord.z)
+        }
     }
 
     override fun readFromNBT(nbt: NBTTagCompound) {
         super.readFromNBT(nbt)
 
-        if (nbt.hasKey("$NBT_PREFIX.storedEMC")) {
-            storedEMC = nbt.getDouble("$NBT_PREFIX.storedEMC")
-        }
+        //if (nbt.hasKey("$NBT_PREFIX.storedEMC")) {
+        //    storedEMC = nbt.getDouble("$NBT_PREFIX.storedEMC")
+        //}
     }
 
     override fun writeToNBT(nbtTagCompound: NBTTagCompound) {
@@ -97,12 +180,12 @@ public class IslandGenArray : AlchemyArray(Reference.Textures.ISLAND_GEN_ARRAY, 
     }
 
     override fun onArrayDestroyedByExplosion(world: World, eventX: Int, eventY: Int, eventZ: Int, arrayX: Int, arrayY: Int, arrayZ: Int, explosion: Explosion?) {
-        onArrayDestroyed(world, arrayX, arrayY, arrayZ)
+        //onArrayDestroyed(world, arrayX, arrayY, arrayZ)
         super.onArrayDestroyedByExplosion(world, eventX, eventY, eventZ, arrayX, arrayY, arrayZ, explosion)
     }
 
     override fun onArrayDestroyedByPlayer(world: World, eventX: Int, eventY: Int, eventZ: Int, arrayX: Int, arrayY: Int, arrayZ: Int, metaData: Int) {
-        onArrayDestroyed(world, arrayX, arrayY, arrayZ)
+        //onArrayDestroyed(world, arrayX, arrayY, arrayZ)
         super.onArrayDestroyedByPlayer(world, eventX, eventY, eventZ, arrayX, arrayY, arrayZ, metaData)
     }
 
