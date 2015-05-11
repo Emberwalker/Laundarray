@@ -31,6 +31,7 @@ public class IslandGenArray : AlchemyArray(Reference.Textures.ISLAND_GEN_ARRAY, 
 
     private final val CHALK_COST = 2
     private final val NBT_PREFIX = "islgen"
+    private final val SCALING_FACTOR = 15
 
     private var requiredEMC = 1024 // TODO: Vary depending on circle size
     private var storedEMC = 0.0
@@ -40,6 +41,7 @@ public class IslandGenArray : AlchemyArray(Reference.Textures.ISLAND_GEN_ARRAY, 
         public var genFuture:Future<Pair<MutableList<IslandGenerator.Companion.BlockCoord>, MutableList<IslandGenerator.Companion.BlockCoord>>>? = null
         public var result:Pair<MutableList<IslandGenerator.Companion.BlockCoord>, MutableList<IslandGenerator.Companion.BlockCoord>>? = null
         public val rand:Random = Random()
+        public var size:Int = 0
     }
 
     private data class ArrayCoord(val x:Int, val y:Int, val z:Int)
@@ -102,8 +104,9 @@ public class IslandGenArray : AlchemyArray(Reference.Textures.ISLAND_GEN_ARRAY, 
             if (tile !is TileEntityAlchemyArray) return
 
             entityPlayer.addChatMessage(ChatComponentText("The array churns into action..."))
-            val height = tile.getSize() * 15
-            val radius = tile.getSize() * 15
+            state.size = tile.getSize()
+            val height = state.size * SCALING_FACTOR
+            val radius = state.size * SCALING_FACTOR
             state.genFuture = IslandGenerator.generateIslandData(height, radius)
             state.isRunning = true
         }
@@ -139,12 +142,17 @@ public class IslandGenArray : AlchemyArray(Reference.Textures.ISLAND_GEN_ARRAY, 
         val stones = state.result!!.first
         val dirts = state.result!!.second
 
+        val offset = Math.round((state.size.toDouble() * SCALING_FACTOR) / 2.0).toInt()
+        val baseX = coord.x - offset
+        val baseY = coord.y + 3
+        val baseZ = coord.z - offset
+
         if (stones.isNotEmpty()) {
             val coordS = stones.first()
             stones.remove(coordS)
 
-            if (world.getBlock(coord.x + coordS.x, coord.y + coordS.y + 3, coord.z + coordS.z).isAir(world, coord.x + coordS.x, coord.y + coordS.y + 3, coord.z + coordS.z)) {
-                world.setBlock(coord.x + coordS.x, coord.y + coordS.y + 3, coord.z + coordS.z, Blocks.stone)
+            if (world.getBlock(baseX + coordS.x, baseY + coordS.y, baseZ + coordS.z).isAir(world, baseX + coordS.x, baseY + coordS.y, baseZ + coordS.z)) {
+                world.setBlock(baseX + coordS.x, baseY + coordS.y, baseZ + coordS.z, Blocks.stone)
             }
         }
 
@@ -152,12 +160,13 @@ public class IslandGenArray : AlchemyArray(Reference.Textures.ISLAND_GEN_ARRAY, 
             val coordD = dirts.first()
             dirts.remove(coordD)
 
-            if (world.getBlock(coord.x + coordD.x, coord.y + coordD.y + 3, coord.z + coordD.z).isAir(world, coord.x + coordD.x, coord.y + coordD.y + 3, coord.z + coordD.z)) {
-                world.setBlock(coord.x + coordD.x, coord.y + coordD.y + 3, coord.z + coordD.z, Blocks.grass)
+            if (world.getBlock(baseX + coordD.x, baseY + coordD.y, baseZ + coordD.z).isAir(world, baseX + coordD.x, baseY + coordD.y, baseZ + coordD.z)) {
+                world.setBlock(baseX + coordD.x, baseY + coordD.y, baseZ + coordD.z, Blocks.grass)
             }
         }
 
         if (stones.isEmpty() && dirts.isEmpty()) {
+            states.remove(coord) // Get rid of state for this array
             world.setBlockToAir(coord.x, coord.y, coord.z)
         }
     }
