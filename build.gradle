@@ -79,6 +79,13 @@ minecraft {
     srgExtra 'PK: kotlin io/drakon/laundarray/repack/kotlin'
 }
 
+// Fix an IDEA bug (via Abrar)
+idea {
+    module {
+        inheritOutputDirs = true
+    }
+}
+
 //================================================
 // Jar data
 
